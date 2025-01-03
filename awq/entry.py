@@ -119,9 +119,23 @@ print("Quantization config:", q_config)
 
 
 def build_model_and_enc(model_path):
-    if not os.path.exists(model_path):  # look into ssd
-        raise FileNotFoundError(f"{model_path} not found!")
-    print(f"* Building model {model_path}")
+    # if not os.path.exists(model_path):  # look into ssd
+    #     raise FileNotFoundError(f"{model_path} not found!")
+    # print(f"* Building model {model_path}")
+
+    if not os.path.exists(model_path):  # 로컬 경로가 아니면 Hugging Face 모델로 가정
+        print(f"Model path {model_path} not found locally. Attempting to download from Hugging Face.")
+    try:
+        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, config=config, torch_dtype=torch.float16, trust_remote_code=True
+        )
+    except Exception as e:
+            raise RuntimeError(f"Failed to download or load the Hugging Face model: {e}")
+    else:
+        print(f"* Building model {model_path}")
+
 
     # all hf model
     if vila_10_quant_mode:
