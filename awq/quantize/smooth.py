@@ -2,11 +2,11 @@
 
 
 import torch.nn as nn
-import llava
-from llava.media import Image, Video
-from llava.utils.media import extract_media
-from llava.constants import DEFAULT_IMAGE_TOKEN
-from llava.mm_utils import process_image, process_images
+# import llava
+# from llava.media import Image, Video
+# from llava.utils.media import extract_media
+# from llava.constants import DEFAULT_IMAGE_TOKEN
+# from llava.mm_utils import process_image, process_images
 import torch
 from collections import defaultdict
 from functools import partial
@@ -138,56 +138,56 @@ def get_static_decoder_layer_scales(
     return decoder_layer_scales, act_dict
 
 
-def get_smooth_scale(model_path, media):
-    # Load model
-    model = llava.load(model_path, devices=[0])
-    del model.llm
-    del model.mm_projector
-    torch.cuda.empty_cache()
-    model = model.cuda().eval()
-    prompt = []
-    if media is not None:
-        for m in media or []:
-            if any(m.endswith(ext) for ext in [".jpg", ".jpeg", ".png"]):
-                m = Image(m)
-            elif any(m.endswith(ext) for ext in [".mp4", ".mkv", ".webm"]):
-                m = Video(m)
-            else:
-                raise ValueError(f"Unsupported media type: {m}")
-            prompt.append(m)
-    conversation = [{"from": "human", "value": prompt}]
-    media = extract_media(conversation, model.config)
-    for name in media:
-        if name == "image":
-            if (
-                len(media["image"]) == 1
-                and model.config.image_aspect_ratio == "dynamic"
-            ):
-                model.config.image_processor = model.vision_tower.image_processor
-                images = process_image(
-                    media["image"][0], model.config, None, enable_dynamic_res=True
-                ).half()
-                conversation[0]["value"] = conversation[0]["value"].replace(
-                    DEFAULT_IMAGE_TOKEN, f"{DEFAULT_IMAGE_TOKEN}\n" * images.shape[0]
-                )
-            else:
-                images = process_images(
-                    media["image"], model.vision_tower.image_processor, model.config
-                ).half()
-            media[name] = [image for image in images]
-        elif name == "video":
-            media[name] = [
-                process_images(
-                    images, model.vision_tower.image_processor, model.config
-                ).half()
-                for images in media[name]
-            ]
-        else:
-            raise ValueError(f"Unsupported media type: {name}")
-    images = torch.cat(media["video"], dim=1)
-    model.vision_tower = model.vision_tower.eval()
-    decoder_layer_scales = get_act_scales(model.vision_tower, images)
-    return decoder_layer_scales
+# def get_smooth_scale(model_path, media):
+#     # Load model
+#     model = llava.load(model_path, devices=[0])
+#     del model.llm
+#     del model.mm_projector
+#     torch.cuda.empty_cache()
+#     model = model.cuda().eval()
+#     prompt = []
+#     if media is not None:
+#         for m in media or []:
+#             if any(m.endswith(ext) for ext in [".jpg", ".jpeg", ".png"]):
+#                 m = Image(m)
+#             elif any(m.endswith(ext) for ext in [".mp4", ".mkv", ".webm"]):
+#                 m = Video(m)
+#             else:
+#                 raise ValueError(f"Unsupported media type: {m}")
+#             prompt.append(m)
+#     conversation = [{"from": "human", "value": prompt}]
+#     media = extract_media(conversation, model.config)
+#     for name in media:
+#         if name == "image":
+#             if (
+#                 len(media["image"]) == 1
+#                 and model.config.image_aspect_ratio == "dynamic"
+#             ):
+#                 model.config.image_processor = model.vision_tower.image_processor
+#                 images = process_image(
+#                     media["image"][0], model.config, None, enable_dynamic_res=True
+#                 ).half()
+#                 conversation[0]["value"] = conversation[0]["value"].replace(
+#                     DEFAULT_IMAGE_TOKEN, f"{DEFAULT_IMAGE_TOKEN}\n" * images.shape[0]
+#                 )
+#             else:
+#                 images = process_images(
+#                     media["image"], model.vision_tower.image_processor, model.config
+#                 ).half()
+#             media[name] = [image for image in images]
+#         elif name == "video":
+#             media[name] = [
+#                 process_images(
+#                     images, model.vision_tower.image_processor, model.config
+#                 ).half()
+#                 for images in media[name]
+#             ]
+#         else:
+#             raise ValueError(f"Unsupported media type: {name}")
+#     images = torch.cat(media["video"], dim=1)
+#     model.vision_tower = model.vision_tower.eval()
+#     decoder_layer_scales = get_act_scales(model.vision_tower, images)
+#     return decoder_layer_scales
 
 
 @torch.no_grad()

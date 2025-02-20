@@ -25,4 +25,5 @@ import os
 # 8 GPU devices are used
 os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3, 4, 5, 6, 7"
 
-model_path = 
+model_path = "/models/gemma-7b"
+quant_path = ""
